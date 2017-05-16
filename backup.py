@@ -3,8 +3,6 @@
 import os, sys, argparse, threading, subprocess, logging
 from os.path import normpath, basename
 
-logging.basicConfig(filename='/var/log/backup-s3.log',format='%(asctime)s %(message)s', level=logging.INFO)
-
 def runner(args, index, job):
     for directory in job:
         destdir = basename(normpath(directory))
@@ -27,6 +25,7 @@ parser.add_argument('--log', '-L', required=True, help='Path of log file (defaul
 
 args = parser.parse_args()
 
+logging.basicConfig(filename=str(args.log),format='%(asctime)s %(message)s', level=logging.INFO)
 max_jobs = int(args.jobs)
 
 directories = []
