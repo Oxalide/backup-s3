@@ -16,6 +16,18 @@ def runner(args, index, job):
             logging.error('rclone not found')
             sys.exit(2)
 
+def runner_files(args, directories):
+    excludes = ' --exclude '.join(directories)
+    try:
+        rcode = subprocess.call(["/usr/local/bin/rclone", "sync", "--exclude", excludes, args.dir, args.rclone+":"+args.bucket, "--quiet"])
+        if rcode != 0:
+            logging.error('Backup of files in %s : Failed', args.dir)
+        else:
+            logging.info('Backup of files in %s : OK', args.dir)
+    except:
+        logging.error('rclone not found')
+        sys.exit(2)
+
 parser = argparse.ArgumentParser(description='Multi runner backup to S3.')
 parser.add_argument('--dir', '-D', required=True, help='root backup (ex: /home/)')
 parser.add_argument('--bucket', '-B', required=True, help='s3 bucket (ex: backup-efs)')
@@ -28,7 +40,7 @@ args = parser.parse_args()
 logging.basicConfig(filename=str(args.log),format='%(asctime)s %(message)s', level=logging.INFO)
 max_jobs = int(args.jobs)
 
-directories = []
+directories = list()
 for fname in os.listdir(args.dir):
     path = os.path.join(args.dir, fname)
     if os.path.isdir(path):
@@ -59,6 +71,7 @@ for index, directory in enumerate(directories, start=1):
         jobs.append([])
         jobs[-1].append(directory)
 
+runner_files(args, directories)
 threads = []
 
 for index, run in enumerate(jobs, start=1):
