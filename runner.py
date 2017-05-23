@@ -6,7 +6,6 @@ from os.path import normpath, basename
 from dynalock import LockerClient
 
 parser = argparse.ArgumentParser(description='Multi runner backup to S3.')
-parser.add_argument('--dir', '-D', required=True, help='root backup (ex: /home/)')
 parser.add_argument('--log', '-L', required=True, help='Path of log file (default: /var/log/backup-s3.log)', default="/var/log/backup-s3.log")
 parser.add_argument('--bucket', '-B', required=True, help='s3 bucket (ex: backup-efs)')
 parser.add_argument('--rclone', '-R', required=True, help='rclone configuration name (ex: s3-backup)')
