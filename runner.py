@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-import os, sys, argparse, threading, subprocess, logging, time
-import boto3
+import os, sys, argparse, threading, subprocess, logging, time, boto3
 from os.path import normpath, basename
 from dynalock import LockerClient
 
