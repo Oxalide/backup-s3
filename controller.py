@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, argparse, subprocess, logging
+import os, argparse, subprocess, logging, boto3
 
 parser = argparse.ArgumentParser(description='Multi runner backup to S3.')
 parser.add_argument('--dir', '-D', required=True, help='root backup (ex: /home/)')
