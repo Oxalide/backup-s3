@@ -57,5 +57,5 @@ if not directories:
     print "Directory "+args.dir+" is empty"
     exit(1)
 
-runner_files(args, directories)
 add_msg(args, directories)
+runner_files(args, directories)
