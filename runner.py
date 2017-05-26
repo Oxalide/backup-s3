@@ -53,7 +53,7 @@ def runner(args, directory):
     destdir = basename(normpath(directory))
     try:
         rcode = subprocess.call(["/usr/local/bin/rclone", "sync", directory, args.rclone+":"+args.bucket+"/"+destdir+"/", "--quiet"])
-        logging.info('Backup of %s : Startedi', directory)
+        logging.info('Backup of %s : Started', directory)
         if rcode != 0:
             logging.error('Backup of %s : Failed', directory)
         else:
