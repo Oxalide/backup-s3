@@ -35,7 +35,10 @@ def get_msg(args):
                 sqs.delete_message(QueueUrl=queue_url,ReceiptHandle=receipt_handle)
                 logging.info('Received and deleted message: %s' % message)
                 lock.release_lock(body)
+                dynamodb = boto3.client('dynamodb',region_name=region)
+                dynamodb.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
+                dynamodb.delete_item(Item={'Instance': instanceid,'Job'})
             else:
                 loggin.info('Message '+body+' already locked')
         except:

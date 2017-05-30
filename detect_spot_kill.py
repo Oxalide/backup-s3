@@ -21,7 +21,7 @@ def get_kill(args):
             dynamodb = boto3.client('dynamodb',region_name=region)
             #get current job
             response = dynamodb.get_item(TableName=args.dynamodb, Key={'Instance':{'S':instanceid}})
-            directory = response['Item']['Instance']
+            directory = response['Item']['Job']
             queue_url = args.queue
             #add in queue
             try:
