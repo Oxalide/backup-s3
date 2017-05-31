@@ -6,6 +6,7 @@ parser = argparse.ArgumentParser(description='Multi runner backup to S3.')
 parser.add_argument('--dynamodb', required=True, help='name of dynamodb table')
 parser.add_argument('--log', '-L', required=True, help='Path of log file (default: /var/log/backup-s3.log)', default="/var/log/backup-s3.log")
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
+parser.add_argument('--job-table', required=True, help='name of dynamodb job table')
 
 args = parser.parse_args()
 
