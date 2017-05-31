@@ -9,6 +9,7 @@ parser.add_argument('--log', '-L', required=True, help='Path of log file (defaul
 parser.add_argument('--bucket', '-B', required=True, help='s3 bucket (ex: backup-efs)')
 parser.add_argument('--rclone', '-R', required=True, help='rclone configuration name (ex: s3-backup)')
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
+parser.add_argument('--dynamodb', required=True, help='name of dynamodb table')
 
 args = parser.parse_args()
 
@@ -35,10 +36,11 @@ def get_msg(args):
                 sqs.delete_message(QueueUrl=queue_url,ReceiptHandle=receipt_handle)
                 logging.info('Received and deleted message: %s' % message)
                 lock.release_lock(body)
-                dynamodb = boto3.client('dynamodb',region_name=region)
-                dynamodb.put_item(Item={'Instance': instanceid,'Job': body})
+                dynamodb = boto3.resource('dynamodb',region_name=region)
+                table = dynamodb.Table(args.dynamodb)
+                table.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
-                dynamodb.delete_item(Item={'Instance': instanceid,'Job'})
+                table.delete_item(Item={'Instance': instanceid})
             else:
                 loggin.info('Message '+body+' already locked')
         except:
