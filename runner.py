@@ -9,8 +9,8 @@ parser.add_argument('--log', '-L', required=True, help='Path of log file (defaul
 parser.add_argument('--bucket', '-B', required=True, help='s3 bucket (ex: backup-efs)')
 parser.add_argument('--rclone', '-R', required=True, help='rclone configuration name (ex: s3-backup)')
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
-parser.add_argument('--lock-table', required=True, help='name of dynamodb lock table')
-parser.add_argument('--job-table', required=True, help='name of dynamodb job table')
+parser.add_argument('--locktable', required=True, help='name of dynamodb lock table')
+parser.add_argument('--jobtable', required=True, help='name of dynamodb job table')
 
 args = parser.parse_args()
 
@@ -20,7 +20,7 @@ def get_msg(args):
     region = os.environ["AWS_REGION"]
     sqs = boto3.client('sqs',region_name=region)
     queue_url = args.queue
-    lock = LockerClient(args.lock-table)
+    lock = LockerClient(args.locktable)
     instanceid = ec2metadata.get('instance-id')
     while(True):
         try:
@@ -34,18 +34,17 @@ def get_msg(args):
             message = msg['Messages'][0]
             body = str(message['Body'])
             message_locked = lock.get_lock(body, 5000)
-            if not message_locked:
-                message_locked = lock.get_lock(body, 5000)
-                logging.warn('lock: '+str(message_locked))
+            logging.info('lock: '+str(message_locked))
+            if message_locked:
                 receipt_handle = message['ReceiptHandle']
                 sqs.delete_message(QueueUrl=queue_url,ReceiptHandle=receipt_handle)
                 logging.info('Received and deleted message: %s' % message)
                 lock.release_lock(body)
                 dynamodb = boto3.resource('dynamodb',region_name=region)
-                table = dynamodb.Table(args.job-table)
+                table = dynamodb.Table(args.jobtable)
                 table.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
-                table.delete_item(Item={'Instance': instanceid})
+                table.delete_item(Key={'Instance': instanceid})
             else:
                 logging.info('Message '+body+' already locked')
                 time.sleep(1)
