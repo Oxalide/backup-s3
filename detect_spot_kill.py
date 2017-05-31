@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import argparse, logging, ec2metadata, boto3
+import argparse, logging, ec2metadata, boto3, time
 
 
 parser = argparse.ArgumentParser(description='Multi runner backup to S3.')
