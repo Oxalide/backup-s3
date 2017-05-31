@@ -44,7 +44,7 @@ def get_msg(args):
                 table = dynamodb.Table(args.jobtable)
                 table.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
-                table.delete_item(Key={'Instance': instanceid})
+                table.delete_item(Key={'Instance': instanceid,'Job': body})
             else:
                 logging.info('Message '+body+' already locked')
                 time.sleep(1)
@@ -69,7 +69,8 @@ def runner(args, directory):
             logging.error('Backup of %s : Failed', directory)
         else:
             logging.info('Backup of %s : OK', directory)
-    except:
+    except Exception as e:
+        logging.error(str(e.message)+' '+str(e.args))
         logging.error('rclone not found')
         sys.exit(2)
 
