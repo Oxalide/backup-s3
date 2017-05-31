@@ -14,7 +14,7 @@ logging.basicConfig(filename=str(args.log),format='%(asctime)s %(levelname)s %(m
 def get_kill(args):
     while(True):
         if ec2metadata.get('termination-time') is None:
-            sleep(10)
+            time.sleep(10)
         else:
             instanceid = ec2metadata.get('instance-id')
             region = os.environ["AWS_REGION"]
