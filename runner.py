@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-import os, sys, argparse, threading, subprocess, logging, time, boto3, ec2metadata
+import os, sys, argparse, threading, logging, time, boto3, ec2metadata
+from subprocess import check_output, CalledProcessError
 from os.path import normpath, basename
 from dynalock import LockerClient
 
