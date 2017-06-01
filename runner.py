@@ -46,14 +46,15 @@ def get_msg(args):
                 table.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
                 table.delete_item(Key={'Instance': instanceid,'Job': body})
+                time.sleep(5)
             else:
                 logging.info('Message '+body+' already locked')
-                time.sleep(1)
+                time.sleep(5)
         except Exception as e:
             logging.error(str(e.message)+' '+str(e.args))
             try:
                 logging.info('no message to read')
-                time.sleep(60)
+                time.sleep(30)
             except KeyboardInterrupt:
                 logging.info('Interrupted')
                 try:
@@ -65,7 +66,7 @@ def runner(args, directory):
     destdir = basename(normpath(directory))
     try:
         logging.info('Backup of %s : Started', directory)
-        rcode = check_output("/usr/local/bin/rclone sync "+directory+" "+args.rclone+":"+args.bucket+"/"+destdir+"/ --quiet",shell=True)
+        rcode = check_output("/usr/local/bin/rclone sync "+directory+" "+args.rclone+":"+args.bucket+"/"+destdir+"/ --quiet --config /etc/rclone.conf",shell=True)
         logging.info('Backup of %s : OK', directory)
     except CalledProcessError as e:
         if e.returncode==127:
