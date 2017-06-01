@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-import os, sys, argparse, threading, subprocess, logging, time, boto3
+import os, sys, argparse, threading, logging, time, boto3, ec2metadata
+from subprocess import check_output, CalledProcessError
 from os.path import normpath, basename
 from dynalock import LockerClient
 
@@ -9,6 +10,8 @@ parser.add_argument('--log', '-L', required=True, help='Path of log file (defaul
 parser.add_argument('--bucket', '-B', required=True, help='s3 bucket (ex: backup-efs)')
 parser.add_argument('--rclone', '-R', required=True, help='rclone configuration name (ex: s3-backup)')
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
+parser.add_argument('--locktable', required=True, help='name of dynamodb lock table')
+parser.add_argument('--jobtable', required=True, help='name of dynamodb job table')
 
 args = parser.parse_args()
 
@@ -18,7 +21,8 @@ def get_msg(args):
     region = os.environ["AWS_REGION"]
     sqs = boto3.client('sqs',region_name=region)
     queue_url = args.queue
-    lock = LockerClient('backup-efs-to-s3-preprod')
+    lock = LockerClient(args.locktable)
+    instanceid = ec2metadata.get('instance-id')
     while(True):
         try:
             msg = sqs.receive_message(
@@ -30,18 +34,31 @@ def get_msg(args):
             )
             message = msg['Messages'][0]
             body = str(message['Body'])
-            if lock.get_lock(body, 5000):
+            message_locked = lock.get_lock(body, 5000)
+            logging.info('lock: '+str(message_locked))
+            if message_locked:
                 receipt_handle = message['ReceiptHandle']
                 sqs.delete_message(QueueUrl=queue_url,ReceiptHandle=receipt_handle)
                 logging.info('Received and deleted message: %s' % message)
                 lock.release_lock(body)
+                dynamodb = boto3.resource('dynamodb',region_name=region)
+                table = dynamodb.Table(args.jobtable)
+                table.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
+                table.delete_item(Key={'Instance': instanceid,'Job': body})
+                if ec2metadata.get('termination-time') is None:
+                    time.sleep(5)
+                else:
+                    logging.info("Instance '%s' it's marked for termination, stopping runner process")
+                    sys.exit(1)
             else:
-                loggin.info('Message '+body+' already locked')
-        except:
+                logging.info('Message '+body+' already locked')
+                time.sleep(5)
+        except Exception as e:
+            logging.error(str(e.message)+' '+str(e.args))
             try:
                 logging.info('no message to read')
-                time.sleep(60)
+                time.sleep(30)
             except KeyboardInterrupt:
                 logging.info('Interrupted')
                 try:
@@ -52,14 +69,17 @@ def get_msg(args):
 def runner(args, directory):
     destdir = basename(normpath(directory))
     try:
-        rcode = subprocess.call(["/usr/local/bin/rclone", "sync", directory, args.rclone+":"+args.bucket+"/"+destdir+"/", "--quiet"])
         logging.info('Backup of %s : Started', directory)
-        if rcode != 0:
-            logging.error('Backup of %s : Failed', directory)
+        rcode = check_output("/usr/local/bin/rclone sync "+directory+" "+args.rclone+":"+args.bucket+"/"+destdir+"/ --quiet --config /etc/rclone.conf",shell=True)
+        logging.info('Backup of %s : OK', directory)
+    except CalledProcessError as e:
+        if e.returncode==127:
+            logging.error("rclone not found")
+        elif e.returncode<=125:
+            logging.error("'rclone' Failed, returned code %d", e.returncode)
         else:
-            logging.info('Backup of %s : OK', directory)
-    except:
-        logging.error('rclone not found')
-        sys.exit(2)
+            logging.error("rclone likely crashed, shell retruned code %d", e.returncode)
+    except OSError as e:
+        logging.error("failed to run shell: '%s'", (str(e)))
 
 get_msg(args)
