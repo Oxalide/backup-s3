@@ -46,7 +46,11 @@ def get_msg(args):
                 table.put_item(Item={'Instance': instanceid,'Job': body})
                 runner(args, body)
                 table.delete_item(Key={'Instance': instanceid,'Job': body})
-                time.sleep(5)
+                if ec2metadata.get('termination-time') is None:
+                    time.sleep(5)
+                else:
+                    logging.info("Instance '%s' it's marked for termination, stopping runner process")
+                    sys.exit(1)
             else:
                 logging.info('Message '+body+' already locked')
                 time.sleep(5)
