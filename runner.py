@@ -63,15 +63,17 @@ def get_msg(args):
 def runner(args, directory):
     destdir = basename(normpath(directory))
     try:
-        rcode = subprocess.call(["/usr/local/bin/rclone", "sync", directory, args.rclone+":"+args.bucket+"/"+destdir+"/", "--quiet"])
         logging.info('Backup of %s : Started', directory)
-        if rcode != 0:
-            logging.error('Backup of %s : Failed', directory)
+        rcode = check_output("/usr/local/bin/rclone sync "+directory+" "+args.rclone+":"+args.bucket+"/"+destdir+"/ --quiet",shell=True)
+        logging.info('Backup of %s : OK', directory)
+    except CalledProcessError as e:
+        if e.returncode==127:
+            logging.error("rclone not found")
+        elif e.returncode<=125:
+            logging.error("'rclone' Failed, returned code %d", e.returncode)
         else:
-            logging.info('Backup of %s : OK', directory)
-    except Exception as e:
-        logging.error(str(e.message)+' '+str(e.args))
-        logging.error('rclone not found')
-        sys.exit(2)
+            logging.error("rclone likely crashed, shell retruned code %d", e.returncode)
+    except OSError as e:
+        logging.error("failed to run shell: '%s'", (str(e)))
 
 get_msg(args)
