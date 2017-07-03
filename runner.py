@@ -12,13 +12,14 @@ parser.add_argument('--rclone', '-R', required=True, help='rclone configuration 
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
 parser.add_argument('--locktable', required=True, help='name of dynamodb lock table')
 parser.add_argument('--jobtable', required=True, help='name of dynamodb job table')
+parser.add_argument('--region', '-Q', required=True, help='AWS region')
 
 args = parser.parse_args()
 
 logging.basicConfig(filename=str(args.log),format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
 
 def get_msg(args):
-    region = os.environ["AWS_REGION"]
+    region = args.region
     sqs = boto3.client('sqs',region_name=region)
     queue_url = args.queue
     lock = LockerClient(args.locktable)

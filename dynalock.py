@@ -12,10 +12,10 @@ def millis_in_future(millis):
 
 class LockerClient():
 
-    def __init__(self, lockTableName):
+    def __init__(self, lockTableName, region='eu-west-1'):
         self.lockTableName = lockTableName
-        region = os.environ["AWS_REGION"]
-        self.db = boto3.client('dynamodb',region_name=region)
+        self.region = region
+        self.db = boto3.client('dynamodb',region_name=self.region)
         self.locked = False
         self.guid = ""
 
