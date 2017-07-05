@@ -9,13 +9,14 @@ parser.add_argument('--rclone', '-R', required=True, help='rclone configuration 
 parser.add_argument('--jobs', '-J', type=int, help='number of backup runner (default: 2)', default=2)
 parser.add_argument('--log', '-L', required=True, help='Path of log file (default: /var/log/backup-s3.log)', default="/var/log/backup-s3.log")
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
+parser.add_argument('--region', '-Q', required=True, help='AWS region')
 
 args = parser.parse_args()
 
 logging.basicConfig(filename=str(args.log),format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
 
 def add_msg(args, job):
-    region = os.environ["AWS_REGION"]
+    region = args.region
     sqs = boto3.client('sqs',region_name=region)
     queue_url = args.queue
     for directory in job:
