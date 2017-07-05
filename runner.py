@@ -22,7 +22,7 @@ def get_msg(args):
     region = args.region
     sqs = boto3.client('sqs',region_name=region)
     queue_url = args.queue
-    lock = LockerClient(args.locktable)
+    lock = LockerClient(args.locktable, region)
     instanceid = ec2metadata.get('instance-id')
     while(True):
         try:
