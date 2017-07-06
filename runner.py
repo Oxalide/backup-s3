@@ -12,7 +12,7 @@ parser.add_argument('--rclone', '-R', required=True, help='rclone configuration 
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
 parser.add_argument('--locktable', required=True, help='name of dynamodb lock table')
 parser.add_argument('--jobtable', required=True, help='name of dynamodb job table')
-parser.add_argument('--region', '-Q', required=True, help='AWS region')
+parser.add_argument('--region', required=True, help='AWS region')
 
 args = parser.parse_args()
 
