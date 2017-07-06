@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, argparse, subprocess, logging, boto3, hashlib
+import os, sys, argparse, subprocess, logging, boto3, hashlib
 
 parser = argparse.ArgumentParser(description='Multi runner backup to S3.')
 parser.add_argument('--dir', '-D', required=True, help='root backup (ex: /home/)')
@@ -9,7 +9,8 @@ parser.add_argument('--rclone', '-R', required=True, help='rclone configuration 
 parser.add_argument('--jobs', '-J', type=int, help='number of backup runner (default: 2)', default=2)
 parser.add_argument('--log', '-L', required=True, help='Path of log file (default: /var/log/backup-s3.log)', default="/var/log/backup-s3.log")
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
-parser.add_argument('--region', '-Q', required=True, help='AWS region')
+parser.add_argument('--region', required=True, help='AWS region')
+parser.add_argument('--subdirs', help='List of optional subdirs',metavar='N',nargs='+')
 
 args = parser.parse_args()
 
@@ -80,10 +81,21 @@ def runner_files(args):
             logging.error('rclone not found')
 
 
+if args.subdirs is not None:
+    subdirs = list()
+    for x in args.subdirs:
+        if x.endswith('/'):
+            x = x[:-1]
+        subdirs.append(x)
+else:
+    subdirs = None
 
 directories = list()
 for fname in os.listdir(args.dir):
     path = os.path.join(args.dir, fname)
+    if subdirs is not None:
+        if path in subdirs:
+            print path
     if os.path.isdir(path):
         if len(os.listdir(path)) > 0:
             directories.append(path)
