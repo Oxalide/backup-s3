@@ -13,6 +13,7 @@ parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
 parser.add_argument('--locktable', required=True, help='name of dynamodb lock table')
 parser.add_argument('--jobtable', required=True, help='name of dynamodb job table')
 parser.add_argument('--region', required=True, help='AWS region')
+parser.add_argument('--ignore-checksum', required=False, action='store_const', const='--ignore-checksum', default="", help='Ignore MD5 checksum')
 
 args = parser.parse_args()
 
@@ -71,7 +72,7 @@ def runner(args, directory):
     destdir = basename(normpath(directory))
     try:
         logging.info('Backup of %s : Started', directory)
-        rcode = check_output("/usr/local/bin/rclone sync "+directory+" "+args.rclone+":"+args.bucket+"/"+destdir+"/ --quiet --config /etc/rclone.conf",shell=True)
+        rcode = check_output("/usr/local/bin/rclone sync "+directory+" "+args.rclone+":"+args.bucket+"/"+destdir+"/ "+args.ignore_checksum+" --quiet --config /etc/rclone.conf",shell=True)
         logging.info('Backup of %s : OK', directory)
     except CalledProcessError as e:
         if e.returncode==127:

@@ -10,6 +10,7 @@ parser.add_argument('--jobs', '-J', type=int, help='number of backup runner (def
 parser.add_argument('--log', '-L', required=True, help='Path of log file (default: /var/log/backup-s3.log)', default="/var/log/backup-s3.log")
 parser.add_argument('--queue', '-Q', required=True, help='Url of the SQS queue')
 parser.add_argument('--region', required=True, help='AWS region')
+parser.add_argument('--ignore-checksum', required=False, action='store_const', const='--ignore-checksum', default="", help='Ignore MD5 checksum')
 
 args = parser.parse_args()
 
@@ -71,7 +72,7 @@ def runner_files(args):
         s3.delete_object(Bucket=args.bucket, Key=file)
     for file in updatelist:
         try:
-            rcode = subprocess.call(["/usr/local/bin/rclone", "copy", file, args.rclone+":"+args.bucket, "--quiet"])
+            rcode = subprocess.call(["/usr/local/bin/rclone", "copy", file, args.rclone+":"+args.bucket, args.ignore_checksum,"--quiet"])
             if rcode != 0:
                 logging.error('Backup of file %s : Failed', file)
             else:
